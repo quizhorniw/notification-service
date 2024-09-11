@@ -1,0 +1,14 @@
+.clang-format
+.project
+.classpath
+.factorypath
+.settings/
+/target
+*.db
+.mvn/wrapper/maven-wrapper.jar
+*.jar
+*.class
+*.log
+*.db
+Dockerfile
+docker-compose.yaml
