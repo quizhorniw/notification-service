@@ -3,7 +3,7 @@ server:
   error:
     include-message: always
     include-binding-errors: always
-
+spring:
   config:
     import: configserver:http://localhost:9999
   mail:

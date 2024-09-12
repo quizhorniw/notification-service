@@ -1,11 +1,8 @@
 package com.drevotiuk.service;
 
-import java.util.Optional;
-
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.messaging.MessagingException;
 import org.springframework.stereotype.Service;
 
 import com.drevotiuk.model.UserView;
@@ -60,47 +57,39 @@ public class NotificationConsumer {
   public void consumeOrderCreated(OrderEmailDetails details) {
     String userId = details.getUserId();
     log.info("Received order created message; userID: {}", userId);
-    UserView user = fetchUser(userId);
+    UserView user = getUserById(userId);
     String emailContent = emailService.buildOrderCreatedEmail(
         user.getFirstName(), details.getOrderTime(), details.getTotalPrice());
     emailService.send(user.getEmail(), orderCreatedTopic, emailContent);
   }
 
   /**
-   * Fetches user details by their ID from the user service via RabbitMQ.
+   * Retrieves user details by sending a request to the user service via RabbitMQ.
    * 
-   * @param userId the ID of the user to fetch
-   * @return the {@link UserView} containing user details
-   * @throws UserNotFoundException if the user cannot be found
+   * @param userId the ID of the user to retrieve
+   * @return a {@link UserView}
    */
-  private UserView fetchUser(String userId) {
-    Optional<UserView> optionalUser = getUserById(userId);
+  private UserView getUserById(String userId) {
+    Object message = rabbitTemplate.convertSendAndReceive(userServiceExchange, userRoutingKey, userId);
 
-    if (!optionalUser.isPresent()) {
+    return validateAndCastUser(message, userId);
+  }
+
+  /**
+   * Validates and casts an object to {@link UserView}.
+   *
+   * @param obj    the object to validate and cast
+   * @param userId the userID associated with the validation
+   * @return the cast object as {@link UserView}
+   * @throws UserNotFoundException if the object is null or not of the
+   *                               {@link UserView} type.
+   */
+  private UserView validateAndCastUser(Object obj, String userId) {
+    if (obj == null || !(obj instanceof UserView)) {
       log.warn("User not found with ID {}", userId);
       throw new UserNotFoundException("User not found");
     }
 
-    return optionalUser.get();
-  }
-
-  /**
-   * Retrieves user details by sending a request to the user service via RabbitMQ.
-   * 
-   * @param userId the ID of the user to retrieve
-   * @return an {@link Optional} containing the {@link UserView} if found, or an
-   *         empty {@link Optional} if not
-   * @throws MessagingException if unexpected error occurs
-   */
-  @SuppressWarnings("unchecked")
-  private Optional<UserView> getUserById(String userId) {
-    Object message = rabbitTemplate.convertSendAndReceive(userServiceExchange, userRoutingKey, userId);
-
-    if (message == null || !(message instanceof Optional)) {
-      log.warn("Unexpected error while receiving user with ID {}", userId);
-      throw new MessagingException("Unexpected error while receiving user");
-    }
-
-    return (Optional<UserView>) message;
+    return (UserView) obj;
   }
 }
