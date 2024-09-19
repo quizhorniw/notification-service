@@ -30,10 +30,10 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class NotificationConsumer {
-  @Value("${services.notification.email.from}")
+  @Value("${notifications.email.from}")
   private String from;
 
-  @Value("${services.notification.email.topic.verification}")
+  @Value("${notifications.email.topic.verification}")
   private String verificationEmailTopic;
   @Value("${resources.email.verification}")
   private String verificationEmailResourcePath;
@@ -45,7 +45,7 @@ public class NotificationConsumer {
   @Value("${security.confirmation-token.expiration}")
 
   private String tokenExpiration;
-  @Value("${services.notification.email.topic.order-created}")
+  @Value("${notifications.email.topic.order-created}")
 
   private String userServiceExchange;
   @Value("${rabbitmq.routingkey.user}")
